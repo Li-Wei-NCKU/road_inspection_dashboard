@@ -124,6 +124,11 @@ select{padding:5px 6px;border-radius:6px;border:1px solid var(--border);backgrou
 .note{font-size:12px;line-height:1.65;color:var(--text-2)}
 .note b{color:var(--text)}
 .leaflet-popup-content{font-size:12.5px;line-height:1.55;margin:10px 12px}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text)}
+.leaflet-container a.leaflet-popup-close-button{color:var(--text-2)}
+.leaflet-tooltip{background:var(--surface);color:var(--text);border-color:var(--border)}
+.leaflet-tooltip-top:before{border-top-color:var(--surface)}.leaflet-tooltip-bottom:before{border-bottom-color:var(--surface)}
+.leaflet-tooltip-left:before{border-left-color:var(--surface)}.leaflet-tooltip-right:before{border-right-color:var(--surface)}
 .leaflet-popup-content b{font-size:13px}
 .leaflet-container{font:inherit}
 .ptable td{padding:2px 6px 2px 0;border:0}
@@ -145,7 +150,7 @@ input[type=number]{width:64px;padding:4px 6px;border-radius:6px;border:1px solid
 .dom button small{font-weight:400;font-size:10.5px;color:var(--text-3)}
 .dom button.on{background:var(--accent);color:#fff}
 .dom button.on small{color:rgba(255,255,255,.8)}
-.chip{display:inline-block;padding:1px 6px;margin:2px 3px 2px 0;border-radius:4px;background:var(--surface-2);font-size:11.5px;cursor:pointer;border:1px solid var(--border)}
+.chip{display:inline-block;padding:1px 6px;margin:2px 3px 2px 0;border-radius:4px;background:var(--surface-2);color:var(--text);font-size:11.5px;cursor:pointer;border:1px solid var(--border)}
 .chip:hover{border-color:var(--accent)}
 @media (max-width:900px){
   main{grid-template-columns:1fr;grid-template-rows:55vh auto}
@@ -604,7 +609,7 @@ function renderHeader(){
   const S=D.stats;
   document.getElementById('sub').textContent=`內政部 115 年度道路設施辨識模組化工具開發及應用推廣案｜${S.date} 臺南市區車巡`;
   const base=[[fmt(S.total_km,2),'km','總行駛里程'],[fmt(D.net.lenAll/1000,2),'km','巡查道路長度(不重複)'],[fmt(S.duration_min,0),'min','巡查時間']];
-  const k= PAVE() ? base.concat([[fmt(D.net.pci,0),'','整體 AI 影像 PCI'],[D.dam.filter(d=>!isEx(segOf(d.s))).length.toLocaleString(),'','破壞物件數']])
+  const k= PAVE() ? base.concat([[fmt(D.net.pci,0),'','整體 AI 影像 PCI'],[D.dam.filter(d=>!isEx(segOf(d.s))).length.toLocaleString(),'','偵測數量']])
                   : base.concat([[fmt(D.wear.mean,1),'','平均標線磨損率'],[D.wear.over.toLocaleString(),'點',`磨損率 > ${P.wthr}`],[D.signs.length,'面','標誌牌面']]);
   document.getElementById('btn-pci').style.display = PAVE()?'':'none';
   document.querySelectorAll('#dom button').forEach(b=>b.classList.toggle('on',b.dataset.d===DOMAIN));
