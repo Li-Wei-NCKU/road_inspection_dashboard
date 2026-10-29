@@ -162,8 +162,8 @@ input[type=number]{width:64px;padding:4px 6px;border-radius:6px;border:1px solid
     <h1 id="h1">道路巡查儀表板</h1>
     <div class="sub" id="sub"></div>
   </div>
-  <div class="dom" id="dom"><button data-d="pave">道路養護<small>鋪面</small></button><button data-d="traffic">交通管理<small>標線・牌面</small></button></div>
-  <button class="btn" id="btn-pci" title="AI 影像 PCI 計算說明">ⓘ AI 影像 PCI 怎麼算？</button>
+  <div class="dom" id="dom"><button data-d="pave">道路養護<small>鋪面調查工具</small></button><button data-d="traffic">交通管理<small>標線磨損・標誌牌面工具</small></button></div>
+  <button class="btn" id="btn-pci" title="AI 影像 PCI 說明">ⓘ PCI 說明</button>
   <div class="kpis" id="kpis"></div>
 </header>
 <main>
@@ -193,7 +193,7 @@ input[type=number]{width:64px;padding:4px 6px;border-radius:6px;border:1px solid
         <button class="btn" id="ph-x" title="關閉">✕</button>
       </div>
       <img id="ph-img" alt="">
-      <div class="err" id="ph-err">找不到照片檔。請確認此 HTML 與「3_annotated photo」資料夾放在同一層。</div>
+      <div class="err" id="ph-err">找不到照片檔</div>
     </div>
   </aside>
 </main>
@@ -210,7 +210,7 @@ window.DATA={"stats":{"date":"2026-09-24","gps_start":"10:10:43","gps_end":"11:2
 const D = window.DATA;
 const PHOTO_DIR = 'photos/pave/';
 const TYPES = {
-  patch:{zh:'修補',unit:'m²',css:'--d-patch'},
+  patch:{zh:'補綻',unit:'m²',css:'--d-patch'},
   crack:{zh:'縱橫向裂縫',unit:'m',css:'--d-crack'},
   alligator:{zh:'龜裂',unit:'m²',css:'--d-alligator'},
   pothole:{zh:'坑洞',unit:'處',css:'--d-pothole'}
@@ -377,7 +377,6 @@ D.photos.forEach((p,i)=>{
   m.bindTooltip(`照片 ${p.t}`,{direction:'top'});
   gPh.addLayer(m);
 });
-D.eop.forEach(p=>L.circleMarker(p,{radius:2,stroke:false,fillColor:'#7a7974',fillOpacity:.7,renderer:rend,interactive:false}).addTo(gEop));
 
 function drawMk(){
   gMk.clearLayers();
@@ -407,12 +406,12 @@ function drawSigns(){
 drawSigns();
 gTrack.addTo(map); gSeg.addTo(map); gSel.addTo(map);
 const OVL={
-  pave:{'巡查軌跡':gTrack,'路段（AI 影像 PCI）':gSeg,'破壞 (SfM 投影)':gDam,'照片位置 (可點選)':gPh,'SfM 照片 POS (EOP)':gEop},
-  traffic:{'巡查軌跡':gTrack,'路段（平均標線磨損率）':gSeg,'標線磨損 (> 門檻)':gMk,'標誌牌面':gSign}};
+  pave:{'巡查軌跡':gTrack,'路段（AI 影像 PCI）':gSeg,'鋪面破壞（鋪面調查工具）':gDam,'照片':gPh},
+  traffic:{'巡查軌跡':gTrack,'路段（平均標線磨損率）':gSeg,'標線磨損（標線磨損辨識工具）':gMk,'標誌牌面（標誌牌面辨識工具）':gSign}};
 let layerCtl=null;
 function applyDomainLayers(){
   const on = PAVE()? [gDam] : [gMk,gSign];
-  const off= PAVE()? [gMk,gSign] : [gDam,gPh,gEop];
+  const off= PAVE()? [gMk,gSign] : [gDam,gPh];
   off.forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); });
   on.forEach(l=>{ if(!map.hasLayer(l)) map.addLayer(l); });
   if(PAVE() && map.getZoom()>=17 && !phHidden && !map.hasLayer(gPh)) gPh.addTo(map);
@@ -439,11 +438,11 @@ const li=(sym,txt)=>`<span style="display:inline-flex;align-items:center;gap:5px
 function legendHTML(){
   const exLi=li(`<i style="width:18px;height:0;border-top:4px dashed ${EX_COL};display:inline-block"></i>`,'非服務區');
   if(PAVE()) return '<b>路段 AI 影像 PCI</b><br>'+CLASSES.map(c=>li(sw(c[2],18,5,'3px'),`${c[1].split(' ')[0]} ${c[0]}+`)).join('')+exLi+
-    '<br><b>破壞類型</b><br>'+TKEYS.map(k=>li(sw(css(TYPES[k].css),k==='crack'?18:10,k==='crack'?3:10,k==='pothole'?'50%':'2px'),TYPES[k].zh)).join('')+
-    '<br><span style="color:var(--text-2)">放大到 z17 以上會顯示照片點，點選即可看照片</span>';
+    '<br><b>鋪面調查工具</b><br>'+TKEYS.map(k=>li(sw(css(TYPES[k].css),k==='crack'?18:10,k==='crack'?3:10,k==='pothole'?'50%':'2px'),TYPES[k].zh)).join('')+
+    '<br><span style="color:var(--text-2)">放大可點照片</span>';
   return `<b>路段平均標線磨損率</b>（門檻 ${P.wthr}）<br>`+wearBins().map(b=>li(sw(b[2],18,5,'3px'),b[3])).join('')+li(sw(WEAR_NA,18,5,'3px'),'無資料')+exLi+
-    '<br><b>標線</b><br>'+li(`<i style="width:10px;height:10px;border-radius:50%;background:${WEAR_COL[3]};box-shadow:0 0 0 2px var(--halo);display:inline-block"></i><i style="width:10px;height:10px;border-radius:50%;background:${WEAR_COL[4]};box-shadow:0 0 0 2px var(--halo);display:inline-block;margin-left:3px"></i>`,`磨損率 > ${P.wthr}（點選看照片）`)+'<br>'+li(`<i style="width:9px;height:9px;border-radius:50%;background:${WEAR_COL[0]};box-shadow:0 0 0 1.5px var(--text-2);display:inline-block"></i>`,'未超標路段的代表照片（每段 2 張）')+
-    '<br><b>標誌牌面</b><br>'+li(`<i style="width:12px;height:12px;border-radius:3px;background:#fff;box-shadow:0 0 0 1px var(--border);display:inline-block"></i>`,'牌面圖示（點選看影像）');
+    '<br><b>標線磨損辨識工具</b><br>'+li(`<i style="width:10px;height:10px;border-radius:50%;background:${WEAR_COL[3]};box-shadow:0 0 0 2px var(--halo);display:inline-block"></i><i style="width:10px;height:10px;border-radius:50%;background:${WEAR_COL[4]};box-shadow:0 0 0 2px var(--halo);display:inline-block;margin-left:3px"></i>`,`磨損率 > ${P.wthr}`)+'<br>'+li(`<i style="width:9px;height:9px;border-radius:50%;background:${WEAR_COL[0]};box-shadow:0 0 0 1.5px var(--text-2);display:inline-block"></i>`,'未超標路段代表照片')+
+    '<br><b>標誌牌面辨識工具</b><br>'+li(`<i style="width:12px;height:12px;border-radius:3px;background:#fff;box-shadow:0 0 0 1px var(--border);display:inline-block"></i>`,'牌面（點選看影像）');
 }
 Lg.onAdd=()=>{const d=L.DomUtil.create('div');d.style.cssText='background:var(--surface);color:var(--text);padding:8px 10px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.25);font-size:11.5px;line-height:1.7;max-width:250px';
   d.innerHTML=legendHTML(); lgDiv=d; L.DomEvent.disableClickPropagation(d); return d;};
@@ -460,7 +459,7 @@ Lg.addTo(map);
 // ---------- popups ----------
 function segHTMLTraffic(s){
   return `<b>${s.name}</b> <span class="muted">路段 #${s.id}</span>
-  ${isEx(s)?`<br><span class="pci" style="background:${EX_COL}">非服務區</span> <span class="muted">${s.ex}；標線磨損不列入統計</span>`:''}
+  ${isEx(s)?`<br><span class="pci" style="background:${EX_COL}">非服務區</span> <span class="muted">${s.ex}</span>`:''}
   <table class="ptable" style="margin-top:4px"><tr><td class="muted">長度</td><td>${fmt(s.len,0)} m</td></tr></table>
   <div class="muted" style="margin:8px 0 2px">標線磨損率</div>
   ${s.wn?`平均 <b>${fmt(s.wmean,1)}</b>（${s.wn} 點）・最大 ${s.wmax}・超過門檻 ${P.wthr}：<b>${s.wover.length}</b> 點`:'<span class="muted">此路段沒有標線磨損資料</span>'}
@@ -474,10 +473,10 @@ function segHTMLTraffic(s){
 function segHTML(s){
   if(!PAVE()) return segHTMLTraffic(s);
   if(isEx(s)) return `<b>${s.name}</b> <span class="muted">路段 #${s.id}</span><br>
-  <span class="pci" style="background:${EX_COL}">非服務區</span> <span class="muted">不列入 AI 影像 PCI 與標線磨損統計</span>
+  <span class="pci" style="background:${EX_COL}">非服務區</span> <span class="muted">不列入統計</span>
   <div style="margin:6px 0" class="muted">原因：${s.ex}</div>
   <table class="ptable"><tr><td class="muted">長度</td><td>${fmt(s.len,0)} m</td></tr>
-  ${TKEYS.map(k=>`<tr><td class="muted">AI 偵測${TYPES[k].zh}</td><td>${k==='pothole'?s.q[k]:fmt(s.q[k],1)} ${TYPES[k].unit}（僅供參考）</td></tr>`).join('')}</table>
+  ${TKEYS.map(k=>`<tr><td class="muted">AI 偵測${TYPES[k].zh}</td><td>${k==='pothole'?s.q[k]:fmt(s.q[k],1)} ${TYPES[k].unit}</td></tr>`).join('')}</table>
   ${s.ph.length?`<div style="margin-top:6px"><button class="btn" onclick="openPhoto(${s.ph[0]},${s.id})">瀏覽此路段照片（${s.ph.length} 張）</button></div>`:''}`;
   const c=cls(s.pci);
   const dvRows=TKEYS.map(k=>`<div class="dv"><span>${TYPES[k].zh}</span><span class="track"><span class="fill" style="width:${Math.min(100,s.dv[k])}%;background:${css(TYPES[k].css)}"></span></span><span style="text-align:right">${P.sev[k]==='OFF'?'不計':fmt(s.dv[k],1)}</span></div>`).join('');
@@ -486,14 +485,14 @@ function segHTML(s){
   <table class="ptable" style="margin-top:4px">
   <tr><td class="muted">長度</td><td>${fmt(s.len,0)} m</td><td class="muted">檢測寬度</td><td>${fmt(s.W,1)} m</td></tr>
   ${TKEYS.map(k=>`<tr><td class="muted">${TYPES[k].zh}</td><td>${k==='pothole'?s.q[k]:fmt(s.q[k],1)} ${TYPES[k].unit}</td><td class="muted">密度</td><td>${fmt(s.dens[k],2)}%</td></tr>`).join('')}
-  </table><div class="muted" style="margin:4px 0 2px">扣分值 DV（CDV ${fmt(s.cdv,1)}）</div>${dvRows}<div style="margin-top:4px"><button class="linkbtn" onclick="showPciHelp(${s.id})">看這個路段的 AI 影像 PCI 計算過程 →</button></div>
-  ${s.ph.length?`<div style="margin-top:6px"><button class="btn primary" onclick="openPhoto(${s.ph[0]},${s.id})">瀏覽此路段照片（${s.ph.length} 張）</button></div>`:'<div class="muted" style="margin-top:6px">此路段無 annotated photo</div>'}`;
+  </table><div class="muted" style="margin:4px 0 2px">扣分值 DV（CDV ${fmt(s.cdv,1)}）</div>${dvRows}<div style="margin-top:4px"><button class="linkbtn" onclick="showPciHelp(${s.id})">計算過程 →</button></div>
+  ${s.ph.length?`<div style="margin-top:6px"><button class="btn primary" onclick="openPhoto(${s.ph[0]},${s.id})">瀏覽此路段照片（${s.ph.length} 張）</button></div>`:'<div class="muted" style="margin-top:6px">此路段無照片</div>'}`;
 }
 function damPopup(d,ll){
   const s=d.s>=0?D.segs[d.s]:null; const T=TYPES[d.t];
   const html=`<b>${T.zh}</b>　${d.t==='pothole'?'1 處':fmt(d.q,2)+' '+T.unit}<br>
-  <span class="muted">所屬路段：</span>${s?(isEx(s)?`${s.name} #${s.id}（非服務區，不列入計算）`:`${s.name} #${s.id}（AI 影像 PCI ${fmt(s.pci,0)}）`):'未歸屬（距巡查路段與車輛軌跡都太遠）'}<br>
-  ${d.ph.length?'<span class="muted">可能拍到的照片：</span><br>'+d.ph.map((i,j)=>`<span class="chip" onclick="openPhoto(${i})">${D.photos[i].t}${j===0?' ★':''}</span>`).join(''):'<span class="muted">附近沒有 annotated photo（可能屬 EOP 時段）</span>'}`;
+  <span class="muted">所屬路段：</span>${s?(isEx(s)?`${s.name} #${s.id}（非服務區）`:`${s.name} #${s.id}（AI 影像 PCI ${fmt(s.pci,0)}）`):'未歸入路段'}<br>
+  ${d.ph.length?'<span class="muted">可能拍到的照片：</span><br>'+d.ph.map((i,j)=>`<span class="chip" onclick="openPhoto(${i})">${D.photos[i].t}${j===0?' ★':''}</span>`).join(''):'<span class="muted">附近沒有照片</span>'}`;
   L.popup({maxWidth:300}).setLatLng(ll).setContent(html).openOn(map);
   if(d.ph.length) openPhoto(d.ph[0]);
 }
@@ -525,7 +524,7 @@ function signPopup(g){
   L.popup({maxWidth:300,offset:[0,-8]}).setLatLng(g.ll).setContent(`<div style="display:flex;gap:10px;align-items:center">${icImg(g.code,48)}<div><b>${icName(g.code)}</b>${g.n>1?' ×'+g.n:''}<br><span class="muted">${icCls(g.code)}　代碼 ${g.code}</span></div></div>
   <table class="ptable" style="margin-top:6px"><tr><td class="muted">所屬路段</td><td>${s?`${s.name} #${s.id}`:'未歸屬'}</td></tr>
   <tr><td class="muted">偵測影像</td><td>${g.fr.length} 張（${D.sgf[g.fr[0]].t.slice(0,8)}${g.fr.length>1?' – '+D.sgf[g.fr[g.fr.length-1]].t.slice(0,8):''}）</td></tr></table>
-  <div class="muted" style="font-size:11.5px;margin-top:4px">位置為最後一張偵測影像的拍攝位置，實際牌面約在其前方 10–30 m。</div>
+  <div class="muted" style="font-size:11.5px;margin-top:4px">點位為拍攝位置</div>
   <div style="margin-top:6px"><button class="btn primary" onclick="openSign(${g.id})">看偵測影像（${g.fr.length} 張）</button></div>`).openOn(map);
   openSign(g.id);
 }
@@ -603,7 +602,7 @@ function selectRoad(r){
 // ---------- panels ----------
 function renderHeader(){
   const S=D.stats;
-  document.getElementById('sub').textContent=`${S.date}　GPS ${S.gps_start}–${S.gps_end}　台南市區棋盤式車巡`;
+  document.getElementById('sub').textContent=`內政部 115 年度道路設施辨識模組化工具開發及應用推廣案｜${S.date} 臺南市區車巡`;
   const base=[[fmt(S.total_km,2),'km','總行駛里程'],[fmt(D.net.lenAll/1000,2),'km','巡查道路長度(不重複)'],[fmt(S.duration_min,0),'min','巡查時間']];
   const k= PAVE() ? base.concat([[fmt(D.net.pci,0),'','整體 AI 影像 PCI'],[D.dam.filter(d=>!isEx(segOf(d.s))).length.toLocaleString(),'','破壞物件數']])
                   : base.concat([[fmt(D.wear.mean,1),'','平均標線磨損率'],[D.wear.over.toLocaleString(),'點',`磨損率 > ${P.wthr}`],[D.signs.length,'面','標誌牌面']]);
@@ -625,8 +624,8 @@ function renderOverview(){
   const H=`<!--§pci-->
   <h3>整體路面狀況（面積加權 AI 影像 PCI）</h3>
   <div class="hero"><span class="num">${fmt(N.pci,0)}</span><span class="badge"><i style="background:${c[2]}"></i>${c[1]}</span></div>
-  <div style="margin-top:2px"><button class="linkbtn" onclick="showPciHelp()">AI 影像 PCI 怎麼算？看計算說明 →</button></div>
-  ${TKEYS.some(k=>P.sev[k]==='OFF')?`<div class="muted" style="margin-top:4px">⚠ 未納入計算：${TKEYS.filter(k=>P.sev[k]==='OFF').map(k=>TYPES[k].zh).join('、')}</div>`:''}
+  <div style="margin-top:2px"><button class="linkbtn" onclick="showPciHelp()">計算方式 →</button></div>
+  ${TKEYS.some(k=>P.sev[k]==='OFF')?`<div class="muted" style="margin-top:4px">未計分：${TKEYS.filter(k=>P.sev[k]==='OFF').map(k=>TYPES[k].zh).join('、')}</div>`:''}
   <div class="muted" style="margin-top:4px">${D.segs.length-N.exSegs.length} 個路段・${D.roads.length} 條道路・檢測面積約 ${fmt(N.A/1e4,2)} 公頃</div>
   ${N.exSegs.length?`<div class="muted" style="margin-top:2px"><i style="display:inline-block;width:16px;border-top:3px dashed ${EX_COL};vertical-align:middle;margin-right:4px"></i>非服務區 ${N.exSegs.length} 段（${N.exSegs.map(s=>s.name+' #'+s.id).join('、')}，${fmt(N.exLen,0)} m）不列入計算</div>`:''}
   <h3>各 AI 影像 PCI 等級路段長度</h3>
@@ -634,41 +633,41 @@ function renderOverview(){
 <!--§mile-->
   <h3>巡查里程</h3>
   <div class="grid2">
-    <div class="stat"><div class="v">${fmt(S.total_km,2)} km</div><div class="l">GPS 總行駛里程（排除靜止飄移）</div></div>
-    <div class="stat"><div class="v">${fmt(S.insp_km,2)} km</div><div class="l">拍攝時段行駛里程 ${S.insp_start}–${S.insp_end}</div></div>
-    <div class="stat"><div class="v">${fmt(N.lenAll/1000,2)} km</div><div class="l">已巡查道路長度（不重複，含非服務區）</div></div>
+    <div class="stat"><div class="v">${fmt(S.total_km,2)} km</div><div class="l">總行駛里程</div></div>
+    <div class="stat"><div class="v">${fmt(S.insp_km,2)} km</div><div class="l">拍攝時段里程</div></div>
+    <div class="stat"><div class="v">${fmt(N.lenAll/1000,2)} km</div><div class="l">巡查道路長度（不重複）</div></div>
     <div class="stat"><div class="v">${fmt(S.total_km/(N.lenAll/1000),2)} 倍</div><div class="l">重複行駛係數</div></div>
     <div class="stat"><div class="v">${fmt(S.moving_min,0)} / ${fmt(S.duration_min,0)} min</div><div class="l">行駛 / 總時間</div></div>
-    <div class="stat"><div class="v">${S.n_photo.toLocaleString()} 張</div><div class="l">annotated photo</div></div>
+    <div class="stat"><div class="v">${S.n_photo.toLocaleString()} 張</div><div class="l">鋪面照片</div></div>
   </div>
 <!--§wear-->
-  <h3>標線磨損率</h3>
+  <h3>標線磨損率（標線磨損辨識工具）</h3>
   <div class="tools" style="margin-bottom:6px"><span class="muted">門檻</span><input type="number" id="wthr-ov" min="0" max="50" step="1" value="${P.wthr}"><span class="muted">磨損率 &gt; 門檻視為超標</span></div>
   <div class="grid2">
-    <div class="stat"><div class="v">${fmt(D.wear.mean,1)}</div><div class="l">全部 ${D.wear.n.toLocaleString()} 個標線點的平均磨損率</div></div>
+    <div class="stat"><div class="v">${fmt(D.wear.mean,1)}</div><div class="l">平均磨損率（${D.wear.n.toLocaleString()} 點）</div></div>
     <div class="stat"><div class="v">${D.wear.over.toLocaleString()} 點 <small class="muted">(${fmt(D.wear.over/D.wear.n*100,1)}%)</small></div><div class="l">磨損率 &gt; ${P.wthr} 的標線點</div></div>
     <div class="stat"><div class="v">${D.wear.segOver.length} 段</div><div class="l">路段平均磨損率 &gt; ${P.wthr}（${fmt(D.wear.segOver.reduce((a,s)=>a+s.len,0)/1000,2)} km）</div></div>
-    <div class="stat"><div class="v">${D.mk.length-D.wear.n>0?(D.mk.length-D.wear.n)+' 點':'—'}</div><div class="l">位於非服務區或未歸屬路段、不列入的標線點</div></div>
+    <div class="stat"><div class="v">${D.mk.length-D.wear.n>0?(D.mk.length-D.wear.n)+' 點':'—'}</div><div class="l">未列入統計的標線點</div></div>
   </div>
   ${(()=>{const bl=wearBins().map(b=>({b,len:0})); let na=0; D.segs.forEach(s=>{ if(isEx(s)) return; if(s.wmean==null){na+=s.len;return;} bl.find(x=>s.wmean>x.b[0]&&s.wmean<=x.b[1]).len+=s.len;}); const mx=Math.max(...bl.map(x=>x.len),na);
     return '<div class="bars" style="margin-top:8px">'+bl.map(x=>`<div class="row" title="平均磨損率 ${x.b[3]}：${fmt(x.len,0)} m"><span>${x.b[3].replace('（超過門檻）','')}</span><span class="track"><span class="fill" style="width:${x.len/mx*100}%;background:${x.b[2]}"></span></span><span class="num">${fmt(x.len/1000,2)} km</span></div>`).join('')+
     `<div class="row" title="無資料：${fmt(na,0)} m"><span>無資料</span><span class="track"><span class="fill" style="width:${na/mx*100}%;background:${WEAR_NA}"></span></span><span class="num">${fmt(na/1000,2)} km</span></div></div>`;})()}
 <!--§sign-->
-  <h3>標誌牌面</h3>
+  <h3>標誌牌面（標誌牌面辨識工具）</h3>
   ${(()=>{const st=D.sign_stats, by={}; D.signs.forEach(g=>{by[g.code]=(by[g.code]||0)+1;});
     const rows=Object.entries(by).sort((a,b)=>b[1]-a[1]);
     return `<div class="grid2">
-      <div class="stat"><div class="v">${D.signs.length} 面</div><div class="l">合併後牌面（${rows.length} 種）</div></div>
-      <div class="stat"><div class="v">${st.raw} 筆 / ${st.frames_det} 張</div><div class="l">原始偵測 / 有偵測的影像（共 ${st.frames_total} 張）</div></div></div>
-      <div class="muted" style="margin:6px 0">合併規則：同路段、同代碼，相距 ≤ ${P.sgDist} m${P.sgConsec?' 或連續影格（≤ 2 秒）':''}。影像僅涵蓋 ${st.t0}–${st.t1}。</div>
+      <div class="stat"><div class="v">${D.signs.length} 面</div><div class="l">牌面（${rows.length} 種）</div></div>
+      <div class="stat"><div class="v">${st.raw} 筆 / ${st.frames_det} 張</div><div class="l">偵測筆數 / 影像張數</div></div></div>
+      <div style="margin:6px 0"></div>
       <table><thead><tr><th>牌面</th><th class="r">數量</th></tr></thead><tbody>${rows.map(([c,n])=>`<tr style="cursor:default"><td>${icImg(c,22)} ${icName(c)} <span class="muted">${icCls(c)}</span></td><td class="r">${n}</td></tr>`).join('')}</tbody></table>
       <div style="margin-top:6px"><button class="btn" onclick="dlSigns()">匯出牌面清單 CSV</button></div>`;})()}
 <!--§dam-->
-  <h3>破壞統計</h3>
+  <h3>破壞統計（鋪面調查工具）</h3>
   <table><thead><tr><th>類型</th><th class="r">數量</th><th class="r">總量</th></tr></thead><tbody>
   ${TKEYS.map(k=>`<tr style="cursor:default"><td><span class="badge"><i style="background:${css(TYPES[k].css)}"></i>${TYPES[k].zh}</span></td><td class="r">${cnt[k].toLocaleString()}</td><td class="r">${k==='pothole'?cnt[k]+' 處':fmt(tot[k],1)+' '+TYPES[k].unit}</td></tr>`).join('')}
   </tbody></table>
-  <div class="muted" style="margin-top:4px">${un} 筆破壞離巡查路段與車輛軌跡都太遠，未納入路段統計。${nEx?`另有 ${nEx} 筆位於非服務區，不列入上表與計算。`:''}</div>
+  <div class="muted" style="margin-top:4px">另有 ${un} 筆未歸入路段${nEx?`、${nEx} 筆位於非服務區`:''}，不列入統計。</div>
   <h3>AI 影像 PCI 最低的道路（長度 ≥ 60 m）</h3>
   <table><tbody>${worst.map(r=>`<tr data-n="${r.name}"><td>${r.name}</td><td class="r muted">${fmt(r.len,0)} m</td><td class="r"><span class="pci" style="background:${cls(r.pci)[2]}">${fmt(r.pci,0)}</span></td></tr>`).join('')}</tbody></table>
 <!--§wtop-->
@@ -698,7 +697,7 @@ function renderTables(){
   tRd=sortable('t-rd',[nm,
     {k:'l',h:'長度 m',v:r=>r.len,f:r=>fmt(r.len,0),r:1},
     {k:'s',h:'段數',v:r=>r.segs.length,r:1},
-    {k:'pa',h:'修補 m²',v:r=>r.q.patch,f:r=>fmt(r.q.patch,1),r:1},
+    {k:'pa',h:'補綻 m²',v:r=>r.q.patch,f:r=>fmt(r.q.patch,1),r:1},
     {k:'cr',h:'裂縫 m',v:r=>r.q.crack,f:r=>fmt(r.q.crack,1),r:1},
     {k:'al',h:'龜裂 m²',v:r=>r.q.alligator,f:r=>fmt(r.q.alligator,1),r:1},
     {k:'po',h:'坑洞',v:r=>r.q.pothole,r:1},
@@ -732,35 +731,24 @@ function renderTables(){
 function renderSettings(){
   const sevSel=k=>`<select data-k="${k}">${['L','M','H','OFF'].map(s=>`<option value="${s}" ${P.sev[k]===s?'selected':''}>${SEVNAME[s]}</option>`).join('')}</select>`;
   const H=`<!--§pave-->
-  <h3>AI 影像 PCI 參數（即時重算）</h3>
-  <label class="set">有效檢測寬度上限：<b id="wv">${P.wcap}</b> m　<span class="muted">（路寬取 OSM 車道數或道路等級估計，再取上限）</span></label>
-  <input type="range" id="wcap" min="3" max="20" step="0.5" value="${P.wcap}">
-  <label class="set">破壞嚴重度假設（AI 未分級，預設全部視為中度；選「關閉」則該類破壞不納入 AI 影像 PCI 計算，地圖上仍會顯示）</label>
+  <h3>AI 影像 PCI</h3>
+  <label class="set">破壞嚴重度（AI 未分級，預設中度；「關閉」則不計分）</label>
   <table class="ptable">${TKEYS.map(k=>`<tr><td>${TYPES[k].zh}</td><td>${sevSel(k)}</td></tr>`).join('')}</table>
 <!--§traffic-->
   <h3>標線磨損率</h3>
-  <label class="set">磨損門檻：<b id="wtv">${P.wthr}</b>　<span class="muted">（磨損率 &gt; 門檻的標線點會標在地圖上，並統計各路段超標點數）</span></label>
+  <label class="set">磨損門檻：<b id="wtv">${P.wthr}</b></label>
   <input type="range" id="wthr" min="1" max="30" step="1" value="${P.wthr}">
-  <label class="set" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mkall" ${P.mkAll?'checked':''}> 地圖上也顯示所有未超標的標線點（依磨損率著色的小點；預設只顯示每段 2 張代表照片）</label>
-  <h3>標誌牌面合併</h3>
-  <label class="set">同路段、同代碼的偵測，相距 ≤ <input type="number" id="sgdist" min="0" max="100" step="1" value="${P.sgDist}"> m 合併為同一面</label>
-  <label class="set" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sgcons" ${P.sgConsec?'checked':''}> 連續影格（相隔 ≤ 2 秒）也合併 <span class="muted">（車速 40 km/h 時，相鄰影格約相距 11 m）</span></label>
 <!--§notes-->
-  <h3>計算方式</h3>${PAVE()?'<p><button class="btn" onclick="showPciHelp()">ⓘ 開啟完整 AI 影像 PCI 計算說明</button></p>':''}
+  <h3>說明</h3>
   <div class="note">
-  <b>路段</b>：以 HMM 地圖匹配把 GPS 軌跡對到 OpenStreetMap 道路中心線，取實際行經（覆蓋 ≥ 50%）的部分，並在與其他巡查道路的路口處切段。單行道依行駛方向區分，雙向分隔道路會各自成段。<br>
-  <span data-dom="pave"><b>破壞歸屬</b>：每個破壞物件以其中心點歸到 20 m 內最近的路段；超過 20 m 的（多半是 OSM 道路線偏移的街道），改找 25 m 內最近的 SfM 相機位置，歸到車輛當時行駛的路段。</span><br>
-  <span data-dom="pave"><b>密度</b>：龜裂、修補 = 面積 ÷ 檢測面積；縱橫向裂縫 = 長度 ÷ 檢測面積；坑洞 = 處數 ÷ 檢測面積（×100%）。檢測面積 = 路段長 × 有效檢測寬度。</span><br>
-  <span data-dom="pave"><b>AI 影像 PCI</b>：借用 ASTM D6433 PCI 的計算流程，但破壞資料來自 AI 影像辨識而非現地調查，故不是正式 PCI — 各類扣分值 DV（以近似的瀝青路面扣分曲線，在密度 0.1/1/10/100% 間對數內插）→ 容許扣分數 m → 反覆計算修正扣分值 CDV 取最大值 → AI 影像 PCI = 100 − CDV。道路與整體分數以檢測面積加權平均；非服務區路段不列入。</span><br>
-  <b>里程</b>：GPS 相鄰點距離加總，排除速度 &lt; 0.5 m/s 的靜止飄移與 &gt; 5 s 的斷訊。<br>
-  <span data-dom="pave"><b>照片位置</b>：照片檔名即 UTC 時間。照片位置直接採用 SfM 解算的 EOP（Refined_EOPs）；沒有 EOP 的照片才以 GPS 軌跡內插並貼齊道路（GPS 在部分街道偏差 10–25 m）。照片歸屬路段則依拍攝時間對應車輛當時行駛的路段；點破壞時，會挑選位置在其後方約 9 m、朝向相符的照片。</span><br>
-  <span data-dom="traffic"><b>標線磨損率</b>：資料來自 5_markline 的 CSV（WearLevel），每點對應 images 裡一張照片。以檔名時間對到地圖匹配後的道路，歸入所在路段並貼齊道路。路段平均磨損率 = 該路段所有標線點的算術平均；磨損率不影響 AI 影像 PCI。</span><br>
-  <span data-dom="traffic"><b>標誌牌面</b>：來自 6_sign/reports 的 AI 偵測報表（66 類公路局標誌）。位置採該影像時間的 SfM 相機位置，並依時間歸入當時行駛的路段；同路段、同代碼、相距 ≤ 設定距離（或連續影格）的偵測合併為一面，地圖點位為最後一張偵測影像的拍攝位置。</span><br>
-  <span data-dom="pave"><b>限制</b>：扣分曲線為近似值、嚴重度未由 AI 分級，AI 影像 PCI 適合用於路段間相對排序，不宜當作正式 PCI 報告數值。路段 &lt; ${P.minLen} m 的分數僅供參考。</span>
-  </div>
-  <h3>資料說明</h3>
-  <div class="note" ${PAVE()?'style="display:none"':''}>${PAVE()?'':`標線磨損：5_markline ${D.mk.length.toLocaleString()} 個標線點（${D.mk[0].t.slice(0,5)}–${D.mk[D.mk.length-1].t.slice(0,5)}），各對應一張 images 照片。標誌牌面：6_sign 共 ${D.sign_stats.frames_total} 張影像（${D.sign_stats.t0}–${D.sign_stats.t1}），${D.sign_stats.frames_det} 張有偵測，影像已印上 AI 框線。`}</div>
-  <div class="note" ${PAVE()?'':'style="display:none"'}>annotated photo ${D.stats.n_photo} 張（${D.stats.insp_start}–${D.stats.insp_end}），全部都有 SfM 解算位置（Refined_EOPs_1、_2 共 ${D.stats.n_eop.toLocaleString()} 筆）。EOP 可在圖層中開啟檢視。</div>`;
+  <b>路段</b>：依巡查軌跡切分，兩路口間的同名道路為一段。<br>
+  <b>里程</b>：GPS 軌跡累計，不含停車與訊號中斷。<br>
+  <span data-dom="pave"><b>破壞</b>：依位置歸入所在路段。</span><br>
+  <span data-dom="pave"><b>AI 影像 PCI</b>：見 <button class="linkbtn" onclick="showPciHelp()">計算方式</button>。</span><br>
+  <span data-dom="pave"><b>照片</b>：鋪面照片 ${D.stats.n_photo.toLocaleString()} 張。</span><br>
+  <span data-dom="traffic"><b>標線磨損率</b>：路段平均為該段所有標線點的平均值；標線照片 ${D.mk.length.toLocaleString()} 張。</span><br>
+  <span data-dom="traffic"><b>標誌牌面</b>：同路段、同類別且相距 10 m 內的偵測合併為一面；點位為拍攝位置。</span>
+  </div>`;
   const part={}; H.split('<!--§').slice(1).forEach(p=>{const i=p.indexOf('-->'); part[p.slice(0,i)]=p.slice(i+3);});
   const el=document.getElementById('p-st'); el.innerHTML=(PAVE()?part.pave:part.traffic)+part.notes;
   el.querySelectorAll('[data-dom]').forEach(x=>{ if(x.dataset.dom!==DOMAIN){ const br=x.nextSibling; x.remove(); if(br&&br.nodeName==='BR') br.remove(); } });
@@ -813,24 +801,27 @@ function showPciHelp(segId){
   const qtyRows=TKEYS.map(k=>`<tr><td>${TYPES[k].zh}</td><td class="r">${k==='pothole'?ex.q[k]:fmt(ex.q[k],2)} ${TYPES[k].unit}</td><td class="r">${k==='pothole'?ex.q[k]:fmt(ex.q[k],2)} ÷ ${fmt(ex.A,0)} × 100 = <b>${fmt(ex.dens[k],3)}%</b></td><td class="r"><b>${fmt(ex.dv[k],1)}</b>${P.sev[k]==='OFF'?' <span class="muted">（關閉）</span>':''}</td></tr>`).join('');
   const iterRows=st.iters.map((it,i)=>`<tr><td>${i+1}</td><td>${it.vals.map(v=>fmt(v,1)).join(' + ')}</td><td class="r">${fmt(it.tdv,1)}</td><td class="r">${it.q}</td><td class="r">${fmt(it.cdv,1)}${Math.abs(it.cdv-ex.cdv)<1e-9?' ★':''}</td></tr>`).join('');
   document.getElementById('pcihelp-body').innerHTML=`
-  <h2>AI 影像 PCI 怎麼算？</h2>
-  <p><b>AI 影像 PCI</b> 借用 PCI（Pavement Condition Index，鋪面狀況指標）的計算方式：從 100 分開始，依路面破壞的<b>種類、數量、嚴重度</b>扣分，0 分表示完全損壞。計算流程依 <b>ASTM D6433</b> 再簡化；但破壞資料來自車巡影像的 AI 辨識，不是人員現地調查，所以稱為「AI 影像 PCI」，<b>不是正式的 PCI</b>。以下 5 個步驟會套用到每一個路段（非服務區路段除外）。</p>
+  <h2>AI 影像 PCI</h2>
+  <p>參考 ASTM D6433 鋪面狀況指標（PCI）：每個路段從 100 分起算，依破壞的種類與密度扣分，0 分為完全損壞。</p>
+  <p>破壞資料來自車巡影像的 AI 辨識，不是現地調查，所以稱為「AI 影像 PCI」。適合用來比較路段、排定維護優先順序，不能取代正式 PCI。</p>
+  <table><tbody>${CLASSES.map((cl,i)=>`<tr><td><span class="pci" style="background:${cl[2]}">${cl[0]}${i?'–'+(CLASSES[i-1][0]-1):'–100'}</span></td><td>${cl[1]}</td></tr>`).join('')}</tbody></table>
+  <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">詳細計算方式</summary>
 
   <h4><span class="n">1</span>決定檢測單元與面積</h4>
   <p>每個<b>路段</b>（兩個巡查路口之間的同名道路）就是一個檢測單元：</p>
   <span class="formula">檢測面積 A = 路段長度 × 有效檢測寬度
 有效檢測寬度 = min( 估計路寬, 寬度上限 ${P.wcap} m )</span>
-  <p>估計路寬取自 OpenStreetMap：有車道數就用「車道數 × 3.3 m + 路肩」，沒有就依道路等級（主要道路 16 m、次要 14 m、一般 11 m、巷道 7 m…）。寬度上限可在「設定與說明」調整，用來反映相機實際拍得到的範圍。</p>
+  <p>路寬依道路等級與車道數估計，上限 ${P.wcap} m（約為相機拍得到的範圍）。</p>
 
   <h4><span class="n">2</span>計算各類破壞的密度</h4>
   <span class="formula">密度 (%) = 破壞量 ÷ A × 100
-  龜裂、修補：破壞量 = 面積 (m²)
+  龜裂、補綻：破壞量 = 面積 (m²)
   縱橫向裂縫：破壞量 = 長度 (m)
   坑洞　　　：破壞量 = 處數</span>
-  <p>破壞量來自 4_output 的 SHP，每個破壞以中心點歸給 20 m 內最近的路段；超過 20 m 的改依最近的 SfM 相機位置（25 m 內），歸到車輛當時行駛的路段。</p>
+  <p>破壞依位置歸入所在路段。</p>
 
   <h4><span class="n">3</span>查扣分曲線，得到扣分值 DV</h4>
-  <p>每類破壞依密度查「扣分曲線」（Deduct Value curve）得到 DV。曲線是 ASTM D6433 瀝青混凝土鋪面曲線的<b>近似值</b>：在密度 0.1 / 1 / 10 / 100% 四個錨點之間以對數內插，密度 ≤ 0.01% 視為 0 分。AI 沒有分級嚴重度，目前假設如下（可在設定頁更改）：</p>
+  <p>每類破壞依密度查「扣分曲線」（Deduct Value curve）得到 DV。曲線是 ASTM D6433 瀝青混凝土鋪面曲線的<b>近似值</b>：在密度 0.1 / 1 / 10 / 100% 四個錨點之間以對數內插，密度 ≤ 0.01% 視為 0 分。嚴重度依設定頁：</p>
   ${dvTab}
   ${dvChart()}
   <p>同樣的密度下，坑洞扣最多、龜裂其次，縱橫向裂縫扣最少：坑洞和龜裂代表結構性破壞，裂縫多半只是表面問題。</p>
@@ -848,8 +839,7 @@ function showPciHelp(segId){
 
   <h4><span class="n">5</span>AI 影像 PCI = 100 − CDV，並分級</h4>
   <span class="formula">AI 影像 PCI = 100 − 最大 CDV（最低 0 分）</span>
-  <table><tbody>${CLASSES.map((cl,i)=>`<tr><td><span class="pci" style="background:${cl[2]}">${cl[0]}${i?'–'+(CLASSES[i-1][0]-1):'–100'}</span></td><td>${cl[1]}</td></tr>`).join('')}</tbody></table>
-  <p><b>道路</b>和<b>整體</b>的分數是各路段分數依檢測面積 A 加權平均，不是把破壞量加總重算。標為<b>非服務區</b>的路段（例如 AI 未訓練過的紅磚路面）不列入任何平均。</p>
+  <p><b>道路</b>和<b>整體</b>的分數是各路段分數依檢測面積 A 加權平均，不是把破壞量加總重算。<b>非服務區</b>路段不列入。</p>
 
   <h4><span class="n">✓</span>實際算一次：${ex.name}（路段 #${ex.id}）</h4>
   <div class="ex">
@@ -858,17 +848,18 @@ function showPciHelp(segId){
   ${st.iters.length?`<p>HDV = ${fmt(st.hdv,1)} → m = 1 + 9/98 × (100 − ${fmt(st.hdv,1)}) = <b>${fmt(st.m,2)}</b>　計入的扣分值：${st.used.map(v=>fmt(v,1)).join('、')}</p>
   <table><thead><tr><th>回合</th><th>扣分值</th><th class="r">TDV</th><th class="r">q</th><th class="r">CDV</th></tr></thead><tbody>${iterRows}</tbody></table>
   <p>最大 CDV = ${fmt(ex.cdv,1)} → <b>AI 影像 PCI = 100 − ${fmt(ex.cdv,1)} = ${fmt(ex.pci,1)}</b>　<span class="pci" style="background:${c[2]}">${fmt(ex.pci,0)}</span> ${c[1]}</p>`:'<p>沒有破壞，AI 影像 PCI = 100。</p>'}
-  <p class="muted">${segId!==undefined||selSeg?'這是你目前選取的路段。':'目前沒有選取路段，所以示範長度 ≥ 60 m 中分數最低的路段。'}在地圖上點路段，再按「看這個路段的 AI 影像 PCI 計算過程」就能換成那一段。</p>
+  <p class="muted">${segId!==undefined||selSeg?'目前選取的路段。':'示範：分數最低的路段（長度 ≥ 60 m）。'}</p>
   </div>
 
-  <h4><span class="n">!</span>AI 影像 PCI 和正式 PCI 的差別</h4>
+  <h4><span class="n">!</span>與正式 PCI 的差別</h4>
   <ul>
     <li><b>嚴重度</b>：正式調查每處破壞要分輕／中／重；AI 沒有分級，這裡同一類破壞全部套用同一個嚴重度。</li>
     <li><b>破壞種類</b>：ASTM 有 19 類破壞，這裡只有 AI 辨識出的 4 類，車轍、隆起、剝脫等不會被扣分。</li>
     <li><b>曲線</b>：扣分曲線與 CDV 曲線是近似值，不是原圖逐點數位化。</li>
     <li><b>檢測面積</b>：路寬是估的，路寬估太窄會讓密度偏高、分數偏低（反之亦然）。</li>
   </ul>
-  <p>因此 AI 影像 PCI 最適合用來<b>比較路段之間誰比較差、排出維護優先順序</b>，不宜當成正式 PCI 報告的數值。路段短於 ${P.minLen} m 時，少量破壞就會造成高密度，分數僅供參考。</p>`;
+  </details>`;
+  if(segId!==undefined){ const dt=document.querySelector('#pcihelp-body details'); if(dt) dt.open=true; }
   document.getElementById('pcihelp').classList.add('on');
   document.querySelector('#pcihelp .card').scrollTop=0; document.getElementById('pcihelp').scrollTop=0;
 }
@@ -882,12 +873,12 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElemen
 function dl(name,rows){const b=new Blob(['﻿'+rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
 document.getElementById('csv-rd').onclick=()=> PAVE()
-  ? dl('roads_ai_pci.csv',[['道路','長度_m','路段數','修補_m2','縱橫向裂縫_m','龜裂_m2','坑洞_處','AI影像PCI','等級'],
+  ? dl('roads_ai_pci.csv',[['道路','長度_m','路段數','補綻_m2','縱橫向裂縫_m','龜裂_m2','坑洞_處','AI影像PCI','等級'],
       ...D.roads.map(r=>[r.name,r.len.toFixed(1),r.segs.length,r.q.patch.toFixed(2),r.q.crack.toFixed(2),r.q.alligator.toFixed(2),r.q.pothole,r.pci.toFixed(1),cls(r.pci)[1]])])
   : dl('roads_traffic.csv',[['道路','長度_m','路段數','標線點數','平均磨損率',`磨損率>${P.wthr}點數`,'牌面數'],
       ...D.roads.map(r=>[r.name,r.len.toFixed(1),r.segs.length,r.wn,r.wmean==null?'':r.wmean.toFixed(2),r.wover,r.sgn||0])]);
 document.getElementById('csv-sg').onclick=()=> PAVE()
-  ? dl('segments_ai_pci.csv',[['路段ID','道路','道路等級','長度_m','檢測寬度_m','修補_m2','縱橫向裂縫_m','龜裂_m2','坑洞_處','DV_修補','DV_裂縫','DV_龜裂','DV_坑洞','CDV','AI影像PCI','等級','照片數'],
+  ? dl('segments_ai_pci.csv',[['路段ID','道路','道路等級','長度_m','檢測寬度_m','補綻_m2','縱橫向裂縫_m','龜裂_m2','坑洞_處','DV_補綻','DV_裂縫','DV_龜裂','DV_坑洞','CDV','AI影像PCI','等級','照片數'],
       ...D.segs.map(s=>[s.id,s.name,s.hw,s.len,s.W,s.q.patch,s.q.crack,s.q.alligator,s.q.pothole,s.dv.patch.toFixed(1),s.dv.crack.toFixed(1),s.dv.alligator.toFixed(1),s.dv.pothole.toFixed(1),s.cdv.toFixed(1),isEx(s)?'':s.pci.toFixed(1),isEx(s)?'非服務區：'+s.ex:cls(s.pci)[1],s.ph.length])])
   : dl('segments_traffic.csv',[['路段ID','道路','長度_m','標線點數','平均磨損率','最大磨損率',`磨損率>${P.wthr}點數`,'牌面數','牌面清單','備註'],
       ...D.segs.map(s=>[s.id,s.name,s.len,s.wn,s.wmean==null?'':s.wmean.toFixed(2),s.wmax??'',s.wover.length,s.sg.length,s.sg.map(i=>icName(D.signs[i].code)).join('、'),isEx(s)?'非服務區：'+s.ex:''])]);
