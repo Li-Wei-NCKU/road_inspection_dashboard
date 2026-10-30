@@ -164,11 +164,10 @@ input[type=number]{width:64px;padding:4px 6px;border-radius:6px;border:1px solid
 <div class="app">
 <header>
   <div>
-    <h1 id="h1">道路巡查儀表板</h1>
+    <h1 id="h1">道路巡查AI模組工具展示</h1>
     <div class="sub" id="sub"></div>
   </div>
   <div class="dom" id="dom"><button data-d="pave">道路養護<small>鋪面調查工具</small></button><button data-d="traffic">交通管理<small>標線磨損・標誌牌面工具</small></button></div>
-  <button class="btn" id="btn-pci" title="AI 影像 PCI 說明">ⓘ PCI 說明</button>
   <div class="kpis" id="kpis"></div>
 </header>
 <main>
@@ -607,11 +606,10 @@ function selectRoad(r){
 // ---------- panels ----------
 function renderHeader(){
   const S=D.stats;
-  document.getElementById('sub').textContent=`內政部 115 年度道路設施辨識模組化工具開發及應用推廣案｜${S.date} 臺南市區車巡`;
-  const base=[[fmt(S.total_km,2),'km','總行駛里程'],[fmt(D.net.lenAll/1000,2),'km','巡查道路長度(不重複)'],[fmt(S.duration_min,0),'min','巡查時間']];
-  const k= PAVE() ? base.concat([[fmt(D.net.pci,0),'','整體 AI 影像 PCI'],[D.dam.filter(d=>!isEx(segOf(d.s))).length.toLocaleString(),'','偵測數量']])
+  document.getElementById('sub').style.display='none';
+  const base=[[S.date,'','日期'],[fmt(S.total_km,2),'km','總行駛里程'],[fmt(D.net.lenAll/1000,2),'km','巡查道路長度'],[fmt(S.duration_min,0),'min','巡查時間']];
+  const k= PAVE() ? base.concat([[D.dam.filter(d=>!isEx(segOf(d.s))).length.toLocaleString(),'','偵測數量']])
                   : base.concat([[fmt(D.wear.mean,1),'','平均標線磨損率'],[D.wear.over.toLocaleString(),'點',`磨損率 > ${P.wthr}`],[D.signs.length,'面','標誌牌面']]);
-  document.getElementById('btn-pci').style.display = PAVE()?'':'none';
   document.querySelectorAll('#dom button').forEach(b=>b.classList.toggle('on',b.dataset.d===DOMAIN));
   document.getElementById('kpis').innerHTML=k.map(x=>`<div class="kpi"><div class="v">${x[0]}<small>${x[1]}</small></div><div class="l">${x[2]}</div></div>`).join('');
 }
@@ -869,7 +867,6 @@ function showPciHelp(segId){
   document.querySelector('#pcihelp .card').scrollTop=0; document.getElementById('pcihelp').scrollTop=0;
 }
 window.showPciHelp=showPciHelp;
-document.getElementById('btn-pci').onclick=()=>showPciHelp();
 document.getElementById('pcihelp-x').onclick=()=>document.getElementById('pcihelp').classList.remove('on');
 document.getElementById('pcihelp').onclick=e=>{ if(e.target.id==='pcihelp') e.currentTarget.classList.remove('on'); };
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('pcihelp').classList.remove('on'); });
